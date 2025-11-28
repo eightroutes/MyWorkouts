@@ -1,5 +1,5 @@
 //
-//  ContentView.swift
+//  StartView.swift
 //  MyWorkouts Watch App
 //
 //  Created by 정근호 on 11/28/25.
@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-struct ContentView: View {
+struct StartView: View {
     var body: some View {
         VStack {
             Image(systemName: "globe")
@@ -20,5 +20,5 @@ struct ContentView: View {
 }
 
 #Preview {
-    ContentView()
+    StartView()
 }
