@@ -16,7 +16,6 @@ class WorkoutManager: NSObject, ObservableObject {
             startWorkout(workoutType: selectedWorkout)
         }
     }
-    
     @Published var showingSummaryView: Bool = false {
         didSet {
             // sheet dismissed
@@ -25,7 +24,6 @@ class WorkoutManager: NSObject, ObservableObject {
             }
         }
     }
-    
     let healthStore = HKHealthStore()
     var session: HKWorkoutSession?
     var builder: HKLiveWorkoutBuilder?
@@ -49,7 +47,9 @@ class WorkoutManager: NSObject, ObservableObject {
             healthStore: healthStore,
             workoutConfiguration: configuration
         )
+        
         session?.delegate = self
+        builder?.delegate = self
         
         // Workout Session 시작, Data 수집 시작
         let startDate = Date.now
@@ -101,6 +101,36 @@ class WorkoutManager: NSObject, ObservableObject {
         session?.end()
         showingSummaryView = true
     }
+    
+    // MARK: - Workout Metrics
+    // published values
+    @Published var averageHeartRate: Double = 0
+    @Published var heartRate: Double = 0
+    @Published var activeEnergy: Double = 0
+    @Published var distance: Double = 0
+    
+    /// Update the published values
+    func updateForStatistics(_ statistics: HKStatistics?) {
+        guard let statistics else { return }
+        
+        DispatchQueue.main.async {
+            switch statistics.quantityType {
+            case HKQuantityType.quantityType(forIdentifier: .heartRate):
+                let heartRateUnit = HKUnit.count().unitDivided(by: HKUnit.minute())
+                self.heartRate = statistics.mostRecentQuantity()?.doubleValue(for: heartRateUnit) ?? 0
+                self.averageHeartRate = statistics.averageQuantity()?.doubleValue(for: heartRateUnit) ?? 0
+            case HKQuantityType.quantityType(forIdentifier: .activeEnergyBurned):
+                let energyUnit = HKUnit.kilocalorie()
+                self.activeEnergy = statistics.sumQuantity()?.doubleValue(for: energyUnit) ?? 0
+            case HKQuantityType.quantityType(forIdentifier: .distanceWalkingRunning),
+                HKQuantityType.quantityType(forIdentifier: .distanceCycling):
+                let meterUnit = HKUnit.meter()
+                self.distance = statistics.sumQuantity()?.doubleValue(for: meterUnit) ?? 0
+            default:
+                return
+            }
+        }
+    }
 }
 
 // MARK: - HKWorkoutSessionDelegate
@@ -125,3 +155,20 @@ extension WorkoutManager: HKWorkoutSessionDelegate {
     }
 }
 
+// MARK: - HKLiveWorkoutBuilderDelegate
+extension WorkoutManager: HKLiveWorkoutBuilderDelegate {
+    func workoutBuilder(_ workoutBuilder: HKLiveWorkoutBuilder, didCollectDataOf collectedTypes: Set<HKSampleType>) {
+        for type in collectedTypes {
+            guard let quantityType = type as? HKQuantityType else { return }
+            
+            let statistics = workoutBuilder.statistics(for: quantityType)
+            
+            // update the published values
+            updateForStatistics(statistics)
+        }
+    }
+    
+    func workoutBuilderDidCollectEvent(_ workoutBuilder: HKLiveWorkoutBuilder) {
+        
+    }
+}
