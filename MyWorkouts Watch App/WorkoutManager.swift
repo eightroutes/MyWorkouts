@@ -40,6 +40,7 @@ class WorkoutManager: NSObject, ObservableObject {
             healthStore: healthStore,
             workoutConfiguration: configuration
         )
+        session?.delegate = self
         
         // Workout Session 시작, Data 수집 시작
         let startDate = Date.now
@@ -65,4 +66,52 @@ class WorkoutManager: NSObject, ObservableObject {
             // Handle error
         }
     }
+    
+    // MARK: - State Control
+    
+    // Workout Session state
+    @Published var running = false
+    
+    func pause() {
+        session?.pause()
+    }
+    
+    func resume() {
+        session?.resume()
+    }
+    
+    func togglePause() {
+        if running {
+            pause()
+        } else {
+            resume()
+        }
+    }
+    
+    func endWorkout() {
+        session?.end()
+    }
 }
+
+// MARK: - HKWorkoutSessionDelegate
+extension WorkoutManager: HKWorkoutSessionDelegate {
+    func workoutSession(_ workoutSession: HKWorkoutSession, didFailWithError error: any Error) {
+        
+    }
+    
+    func workoutSession(_ workoutSession: HKWorkoutSession, didChangeTo toState: HKWorkoutSessionState, from fromState: HKWorkoutSessionState, date: Date) {
+        DispatchQueue.main.async {
+            self.running = toState == .running
+        }
+        
+        // 종료 전에 endCollection 후 finishWorkout
+        if toState == .ended {
+            builder?.endCollection(withEnd: date) { (success, error) in
+                self.builder?.finishWorkout { (workout, error) in
+                    
+                }
+            }
+        }
+    }
+}
+
