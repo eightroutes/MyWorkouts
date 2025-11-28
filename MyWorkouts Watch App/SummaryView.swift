@@ -9,6 +9,7 @@ import SwiftUI
 import HealthKit
 
 struct SummaryView: View {
+    @Environment(\.dismiss) var dismiss
     @State private var durationFormatter: DateComponentsFormatter = {
         let formatter = DateComponentsFormatter()
         formatter.allowedUnits = [.hour, .minute, .second]
@@ -62,6 +63,7 @@ struct SummaryView: View {
                     .frame(width: 50, height: 50)
                 
                 Button("Done") {
+                    dismiss()
                 }
             }//VStack
             .scenePadding()

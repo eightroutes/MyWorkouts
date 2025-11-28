@@ -16,6 +16,9 @@ struct MyWorkouts_Watch_AppApp: App {
             NavigationView {
                 StartView()
             }
+            .sheet(isPresented: $workoutManager.showingSummaryView, content: {
+                SummaryView()
+            })
             .environmentObject(workoutManager) // workoutManager 주입
         }
     }
