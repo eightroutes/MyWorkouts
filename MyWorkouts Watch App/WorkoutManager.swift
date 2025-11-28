@@ -48,4 +48,21 @@ class WorkoutManager: NSObject, ObservableObject {
             // Workout 시작
         }
     }
+    
+    /// HealthKit 권한 요청
+    func requestAuthorization() {
+        let typesToShare: Set = [ HKQuantityType.workoutType() ]
+        
+        let typesToRead: Set = [
+            HKQuantityType.quantityType(forIdentifier: .heartRate)!,
+            HKQuantityType.quantityType(forIdentifier: .activeEnergyBurned)!,
+            HKQuantityType.quantityType(forIdentifier: .distanceWalkingRunning)!,
+            HKQuantityType.quantityType(forIdentifier: .distanceCycling)!,
+            HKObjectType.activitySummaryType()
+        ]
+        
+        healthStore.requestAuthorization(toShare: typesToShare, read: typesToRead) { (success, error) in
+            // Handle error
+        }
+    }
 }
